@@ -396,7 +396,7 @@ class NonLinearCoxPHModel(BaseModel):
                 Fail[index_fail, i] = 1.
 
         self.nb_fail_per_time = np.sum( Fail, axis = 1 ).astype(int)
-        return torch.FloatTensor(Risk), torch.FloatTensor(Fail)
+        return torch.cuda.FloatTensor(Risk), torch.cuda.FloatTensor(Fail)
 
 
     def efron_matrix(self):
@@ -415,9 +415,9 @@ class NonLinearCoxPHModel(BaseModel):
                 Efron_one [i, :d] = 1.
                 Efron_anti_one[i, :d] = 0.
                 
-        Efron_coef = torch.FloatTensor(Efron_coef)
-        Efron_one = torch.FloatTensor(Efron_one)                
-        Efron_anti_one = torch.FloatTensor(Efron_anti_one)        
+        Efron_coef = torch.cuda.FloatTensor(Efron_coef)
+        Efron_one = torch.cuda.FloatTensor(Efron_one)                
+        Efron_anti_one = torch.cuda.FloatTensor(Efron_anti_one)        
         return Efron_coef, Efron_one, Efron_anti_one
 
 
@@ -618,18 +618,18 @@ class NonLinearCoxPHModel(BaseModel):
                              bn_and_dropout )
 
         # Looping through the data to calculate the loss
-        X = torch.FloatTensor(X_original) 
+        X = torch.cuda.FloatTensor(X_original) 
 
         # Computing the Risk and Fail tensors
         Risk, Fail = self.risk_fail_matrix(T, E)
-        Risk = torch.FloatTensor(Risk) 
-        Fail = torch.FloatTensor(Fail) 
+        Risk = torch.cuda.FloatTensor(Risk) 
+        Fail = torch.cuda.FloatTensor(Fail) 
 
         # Computing Efron's matrices
         Efron_coef, Efron_one, Efron_anti_one = self.efron_matrix()
-        Efron_coef = torch.FloatTensor(Efron_coef) 
-        Efron_one = torch.FloatTensor(Efron_one) 
-        Efron_anti_one = torch.FloatTensor(Efron_anti_one) 
+        Efron_coef = torch.cuda.FloatTensor(Efron_coef) 
+        Efron_one = torch.cuda.FloatTensor(Efron_one) 
+        Efron_anti_one = torch.cuda.FloatTensor(Efron_anti_one) 
 
         # Performing order 1 optimization
         model, loss_values = opt.optimize(self.loss_function, model, optimizer, 
@@ -643,10 +643,10 @@ class NonLinearCoxPHModel(BaseModel):
 
         # Computing baseline functions
         x = X_original
-        x = torch.FloatTensor(x)
+        x = torch.cuda.FloatTensor(x)
 
         # Calculating risk_score
-        score = np.exp(self.model(torch.FloatTensor(x)).data.numpy().flatten())
+        score = np.exp(self.model(torch.cuda.FloatTensor(x)).data.cpu().numpy().flatten())
         baselines = _baseline_functions(score, T, E)
 
         # Saving the Cython attributes in the Python object
@@ -682,7 +682,7 @@ class NonLinearCoxPHModel(BaseModel):
             x = self.scaler.transform( x )
             
         # Calculating risk_score, hazard, density and survival 
-        score    = self.model(torch.FloatTensor(x)).data.numpy().flatten()
+        score    = self.model(torch.cuda.FloatTensor(x)).data.cpu().numpy().flatten()
         phi      = np.exp( score )
         hazard   = self.baseline_hazard*phi.reshape(-1, 1)
         survival = np.power(self.baseline_survival, phi.reshape(-1, 1))
@@ -721,10 +721,10 @@ class NonLinearCoxPHModel(BaseModel):
                 x = np.reshape(x, (1, -1))
 
         # Transforming into pytorch objects
-        x = torch.FloatTensor(x)
+        x = torch.cuda.FloatTensor(x)
 
         # Calculating risk_score
-        score = self.model(x).data.numpy().flatten()
+        score = self.model(x).data.cpu().numpy().flatten()
         if not use_log:
             score = np.exp(score)
 
