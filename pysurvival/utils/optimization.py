@@ -36,7 +36,7 @@ def initialization(init_method, W, is_tensor=True):
 
     # Checking if the parameters is a tensor, if not transform it into one
     if not is_tensor:
-        W = torch.FloatTensor(W)
+        W = torch.cuda.FloatTensor(W)
 
     # Creating a column vector if one dimensional tensor
     if len(W.shape)==1:
